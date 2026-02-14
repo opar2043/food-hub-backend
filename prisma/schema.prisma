@@ -1,8 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Prisma Schema
 
 generator client {
   provider = "prisma-client"
@@ -13,21 +9,204 @@ datasource db {
   provider = "postgresql"
 }
 
+//////////////////////
+// ENUMS
+//////////////////////
+
+enum ROLE {
+  ADMIN
+  CUSTOMER
+  PROVIDER
+}
+
+enum Status {
+  AVAILABLE
+  UNAVAILABLE
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  DELIVERED
+}
+
+//////////////////////
+// USER
+//////////////////////
 
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-  posts Post[]
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  name          String?
+  role          ROLE      @default(CUSTOMER)
+  emailVerified Boolean   @default(false)
+  image         String?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  sessions      Session[]
+  accounts      Account[]
+  reviews       Review[]
+  orders        Order[]
+  meals         Meals[]   @relation("ProviderMeals")
+
+  @@map("users")
 }
 
-model Post {
-  id        Int     @id @default(autoincrement())
-  title     String
-  content   String?
-  published Boolean @default(false)
-  author    User    @relation(fields: [authorId], references: [id])
-  authorId  Int
+//////////////////////
+// MEALS
+//////////////////////
+
+model Meals {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  price       Float
+  status      Status   @default(AVAILABLE)
+  ingredients String[]
+
+  providerId  Int
+  provider    User     @relation("ProviderMeals", fields: [providerId], references: [id])
+
+  reviews     Review[]
+  orderItems  OrderItem[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("meals")
 }
 
+//////////////////////
+// REVIEW
+//////////////////////
 
+model Review {
+  id      Int     @id @default(autoincrement())
+  rating  Int
+  comment String?
+
+  mealId  Int
+  meal    Meals   @relation(fields: [mealId], references: [id])
+
+  userId  Int
+  user    User    @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("reviews")
+}
+
+//////////////////////
+// ORDER
+//////////////////////
+
+model Order {
+  id        Int         @id @default(autoincrement())
+
+  userId    Int
+  user      User        @relation(fields: [userId], references: [id])
+
+  items     OrderItem[]
+
+  price     Float
+  quantity  Int
+  mobile    String
+  address   String
+
+  status    OrderStatus @default(PENDING)
+
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@map("orders")
+}
+
+//////////////////////
+// ORDER ITEM
+//////////////////////
+
+model OrderItem {
+  id       Int   @id @default(autoincrement())
+
+  orderId  Int
+  order    Order @relation(fields: [orderId], references: [id])
+
+  mealId   Int
+  meal     Meals @relation(fields: [mealId], references: [id])
+
+  quantity Int
+
+  @@map("order_items")
+}
+
+//////////////////////
+// SESSION
+//////////////////////
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ipAddress String?
+  userAgent String?
+
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+//////////////////////
+// ACCOUNT
+//////////////////////
+
+model Account {
+  id                    String   @id
+  accountId             String
+  providerId            String
+
+  userId                Int
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+
+  scope                 String?
+  password              String?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([userId])
+  @@map("accounts")
+}
+
+//////////////////////
+// VERIFICATION
+//////////////////////
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verifications")
+}
