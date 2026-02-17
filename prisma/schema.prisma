@@ -69,8 +69,8 @@ model Meals {
   status      Status   @default(AVAILABLE)
   ingredients String[]
 
-  providerId  Int
-  provider    User     @relation("ProviderMeals", fields: [providerId], references: [id])
+  providerId  Int?
+  provider    User?     @relation("ProviderMeals", fields: [providerId], references: [id])
 
   reviews     Review[]
   orderItems  OrderItem[]

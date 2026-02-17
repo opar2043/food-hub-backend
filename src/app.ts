@@ -1,9 +1,14 @@
-import type { Application } from "express"
-import express from 'express'
+import type { Application } from "express";
+import express from "express";
 import { auth } from "./auth";
 import { toNodeHandler } from "better-auth/node";
-const app : Application= express();
+import { mealsRouter } from "./module/meals/meals.route";
+
+const app: Application = express();
 
 app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use(express.json());
-export default app
+
+app.use("/api/v1", mealsRouter);
+
+export default app;
