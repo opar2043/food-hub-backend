@@ -1,7 +1,5 @@
-// Prisma Schema
-
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
@@ -37,13 +35,12 @@ enum OrderStatus {
 //////////////////////
 
 model User {
-  id            Int       @id @default(autoincrement())
+  id            String    @id @default(uuid())
   email         String    @unique
   name          String?
   role          ROLE      @default(CUSTOMER)
   emailVerified Boolean   @default(false)
   image         String?
-
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -62,15 +59,15 @@ model User {
 //////////////////////
 
 model Meals {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(uuid())
   name        String
   description String?
   price       Float
   status      Status   @default(AVAILABLE)
   ingredients String[]
 
-  providerId  Int?
-  provider    User?     @relation("ProviderMeals", fields: [providerId], references: [id])
+  providerId  String?
+  provider    User?    @relation("ProviderMeals", fields: [providerId], references: [id], onDelete: SetNull)
 
   reviews     Review[]
   orderItems  OrderItem[]
@@ -86,15 +83,15 @@ model Meals {
 //////////////////////
 
 model Review {
-  id      Int     @id @default(autoincrement())
-  rating  Int
-  comment String?
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String?
 
-  mealId  Int
-  meal    Meals   @relation(fields: [mealId], references: [id])
+  mealId    String
+  meal      Meals    @relation(fields: [mealId], references: [id], onDelete: Cascade)
 
-  userId  Int
-  user    User    @relation(fields: [userId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -106,17 +103,16 @@ model Review {
 //////////////////////
 
 model Order {
-  id        Int         @id @default(autoincrement())
+  id        String      @id @default(uuid())
 
-  userId    Int
-  user      User        @relation(fields: [userId], references: [id])
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   items     OrderItem[]
 
-  price     Float
-  quantity  Int
-  mobile    String
-  address   String
+  totalPrice Float
+  mobile     String
+  address    String
 
   status    OrderStatus @default(PENDING)
 
@@ -131,15 +127,16 @@ model Order {
 //////////////////////
 
 model OrderItem {
-  id       Int   @id @default(autoincrement())
+  id       String @id @default(uuid())
 
-  orderId  Int
-  order    Order @relation(fields: [orderId], references: [id])
+  orderId  String
+  order    Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  mealId   Int
-  meal     Meals @relation(fields: [mealId], references: [id])
+  mealId   String
+  meal     Meals  @relation(fields: [mealId], references: [id], onDelete: Cascade)
 
   quantity Int
+  price    Float
 
   @@map("order_items")
 }
@@ -149,7 +146,7 @@ model OrderItem {
 //////////////////////
 
 model Session {
-  id        String   @id
+  id        String   @id @default(uuid())
   expiresAt DateTime
   token     String   @unique
 
@@ -159,7 +156,7 @@ model Session {
   ipAddress String?
   userAgent String?
 
-  userId    Int
+  userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -171,11 +168,11 @@ model Session {
 //////////////////////
 
 model Account {
-  id                    String   @id
+  id                    String   @id @default(uuid())
   accountId             String
   providerId            String
 
-  userId                Int
+  userId                String
   user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   accessToken           String?
@@ -199,7 +196,7 @@ model Account {
 //////////////////////
 
 model Verification {
-  id         String   @id
+  id         String   @id @default(uuid())
   identifier String
   value      String
   expiresAt  DateTime
